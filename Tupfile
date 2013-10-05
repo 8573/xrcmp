@@ -1,0 +1,15 @@
+.gitignore
+
+NAME = xrcmp
+
+SOURCES = main.d
+
+D = dmd -de -O -fPIC -w
+
+: foreach $(SOURCES) |> ^ compile %f^ \
+	$(D) -c %f -of%o \
+	|> %B.o {objectfiles}
+
+: {objectfiles} |> ^ link %o^ \
+	$(D) %f -of%o \
+	|> $(NAME)
