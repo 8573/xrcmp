@@ -9,9 +9,11 @@ int main(string[] args) {
 	bool showHelp = false;
 	bool markRows = false;
 	bool markColumns = false;
+	bool showTotal = false;
 	ushort minColumnWidth = 1;
 	ushort maxColumnWidth = ushort.max;
 	string pattern = `\S+`;
+	string totalColumnTitle = "(ALL)";
 
 	{
 		auto error = collectExceptionMsg(
@@ -19,6 +21,7 @@ int main(string[] args) {
 				args,
 				std.getopt.config.noPassThrough,
 				"pattern|p", &pattern,
+				"total|t", &showTotal,
 				"mark-both|mb", () {
 					markColumns = true;
 					markRows = true;
@@ -50,6 +53,8 @@ of the search pattern in each file.
          Defaults to ‘\S+’, i.e. all sequences of non-whitespace characters.
          See <http://dlang.org/phobos/std_regex.html> for a description of the
          pattern syntax (in the “Pattern syntax” section).
+      --total, --t
+         Print an extra column showing the total occurrences of each match.
       --mark-columns, --mc      --mark-rows, --mr      --mark-both, --mb
          Print borders between columns/rows/both.
       --max-column-width=<0..65535>, --maxw=<0..65535>
@@ -86,17 +91,24 @@ of the search pattern in each file.
 	//                 +--------|---- filename
 	//                          +---- match
 
+	size_t[string] matchTotals;
+	// ^-----|---- matchQty
+	//       +---- match
+
 	string[] matches;
 
 	foreach (filename, matchList; matchListsByFile) {
 		foreach (match, matchQty; matchList) {
 			matches ~= match;
 			matchListsByMatch[match][filename] = matchQty;
+			matchTotals[match] += matchQty;
 		}
 	}
 
 	int columnWidth = clampToInt(
-		greater(greatestLength(args), greatestLength(matches)),
+		greater(greater(greatestLength(matches),
+				greatestLength(args)),
+			totalColumnTitle.length - 2),
 		minColumnWidth, maxColumnWidth) + 2;
 
 	void writeN(char c, size_t n) {
@@ -119,6 +131,11 @@ of the search pattern in each file.
 	}
 
 	writePad();
+	if (showTotal) {
+		markColumn("| ");
+		writePad(totalColumnTitle.length);
+		write(totalColumnTitle);
+	}
 	foreach (filename; args) {
 		markColumn("| ");
 		writePad(filename.length + 2);
@@ -129,7 +146,7 @@ of the search pattern in each file.
 	foreach (match, matchQtyPerFile; matchListsByMatch) {
 		if (markRows) {
 			writeN('-', columnWidth);
-			foreach (i; 0..args.length) {
+			foreach (i; 0..(args.length + showTotal)) {
 				if (markColumns) {
 					write("-+");
 				}
@@ -139,6 +156,10 @@ of the search pattern in each file.
 		}
 		write('‘', match, '’');
 		writePad(match.length + 2 + 1);
+		if (showTotal) {
+			markColumn(" |");
+			writef("%*s", columnWidth, matchTotals.get(match, 0));
+		}
 		foreach (filename; args) {
 			markColumn(" |");
 			writef("%*s", columnWidth,
