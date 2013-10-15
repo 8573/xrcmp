@@ -6,6 +6,7 @@ import std.stdio;
 
 int main(string[] args) {
 
+	bool debugMode = false;
 	bool showHelp = false;
 	bool markRows = false;
 	bool markColumns = false;
@@ -21,6 +22,7 @@ int main(string[] args) {
 			getopt(
 				args,
 				std.getopt.config.noPassThrough,
+				"debug", &debugMode,
 				"pattern|p", &pattern,
 				"total|t", &showTotal,
 				"shared|s", &showOnlyShared,
@@ -137,6 +139,10 @@ of the search pattern in each file.
 		if (markColumns) {
 			write(border);
 		}
+	}
+
+	if (debugMode) {
+		writeln("column width: ", columnWidth);
 	}
 
 	writePad();
