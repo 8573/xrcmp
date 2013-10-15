@@ -146,6 +146,7 @@ of the search pattern in each file.
 	}
 
 	writePad();
+	write(' ');
 	if (showTotal) {
 		markColumn("| ");
 		writePad(totalColumnTitle.length);
@@ -173,7 +174,7 @@ of the search pattern in each file.
 			writeln();
 		}
 		write('‘', match, '’');
-		writePad(match.length + 2 + 1);
+		writePad(match.length + 2);
 		if (showTotal) {
 			markColumn(" |");
 			writef("%*s", columnWidth, matchTotals.get(match, 0));
