@@ -10,6 +10,7 @@ int main(string[] args) {
 	bool markRows = false;
 	bool markColumns = false;
 	bool showTotal = false;
+	bool showOnlyShared = false;
 	ushort minColumnWidth = 1;
 	ushort maxColumnWidth = ushort.max;
 	string pattern = `\S+`;
@@ -22,6 +23,7 @@ int main(string[] args) {
 				std.getopt.config.noPassThrough,
 				"pattern|p", &pattern,
 				"total|t", &showTotal,
+				"shared|s", &showOnlyShared,
 				"mark-both|mb", () {
 					markColumns = true;
 					markRows = true;
@@ -55,6 +57,8 @@ of the search pattern in each file.
          pattern syntax (in the “Pattern syntax” section).
       --total, --t
          Print an extra column showing the total occurrences of each match.
+      --shared, --s
+         Don’t show matches that don’t occur in multiple files.
       --mark-columns, --mc      --mark-rows, --mr      --mark-both, --mb
          Print borders between columns/rows/both.
       --max-column-width=<0..65535>, --maxw=<0..65535>
@@ -95,6 +99,10 @@ of the search pattern in each file.
 	// ^-----|---- matchQty
 	//       +---- match
 
+	size_t[string] matchFiles;
+	// ^-----|---- (quantity of files in which match occurs)
+	//       +---- match
+
 	string[] matches;
 
 	foreach (filename, matchList; matchListsByFile) {
@@ -102,6 +110,7 @@ of the search pattern in each file.
 			matches ~= match;
 			matchListsByMatch[match][filename] = matchQty;
 			matchTotals[match] += matchQty;
+			matchFiles[match] += 1;
 		}
 	}
 
@@ -144,6 +153,9 @@ of the search pattern in each file.
 	writeln();
 
 	foreach (match, matchQtyPerFile; matchListsByMatch) {
+		if (showOnlyShared && matchFiles[match] < 2) {
+			continue;
+		}
 		if (markRows) {
 			writeN('-', columnWidth);
 			foreach (i; 0..(args.length + showTotal)) {
